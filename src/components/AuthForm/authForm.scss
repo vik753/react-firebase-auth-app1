@@ -60,6 +60,14 @@
         word-break: break-all;
         padding: 11px;
       }
+
+      &.success {
+        border-color: #52c752;
+
+        h3 {
+          color: #52c752;
+        }
+      }
     }
   }
 }

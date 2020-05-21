@@ -7,8 +7,20 @@ class AuthForm extends Component {
     email: "",
     password: "",
     error: false, // {title, message }
+    isLoggedIn: false,
     response: null,
+    tooltip: null,
+    authForm: null,
   };
+
+  componentDidMount() {
+    const tooltip = document.querySelector(".hint-wrapper");
+    const authForm = document.querySelector(".auth-form");
+    this.setState(() => ({
+      tooltip,
+      authForm,
+    }));
+  }
 
   onSubmitClickHandler = (e) => {
     e.preventDefault();
@@ -33,40 +45,47 @@ class AuthForm extends Component {
     }
 
     response.then((data) => {
-      if (data.error) {
+      if (data && data.error) {
         this.hintShowHandler(
           `Error.`,
-          `${data.errorCode}, ${data.errorMessage}`
+          `${data.errorCode}, ${data.errorMessage}`,
+          false
         );
-      } else {
-        this.setState(() => ({
-          response: data,
-        }));
-        this.hintShowHandler(
-          "Success!",
-          `Sign up successful! Your token: ${
-            this.state.response.idToken
-          }, it will expire in ${(Number(this.state.response.expiresIn) / 60)} min.`
-        );
+        return;
       }
-    });
 
-    //clear state and inputs
-    // this.setState(() => ({
-    //   email: "",
-    //   password: "",
-    // }))
+      this.setState(() => ({
+        response: data,
+        email: "",
+        password: "",
+        error: false,
+        isLoggedIn: data.requestType === "logIn",
+      }));
+      this.state.authForm.reset();
+      this.hintShowHandler(
+        "Success!",
+        `${
+          data.requestType === "signUp" ? "Sign up" : "Log in"
+        } was successfully!`,
+        true
+      );
+      setTimeout(() => {
+        this.props.isLogged(true);
+      }, 2000);
+    });
   };
 
-  hintShowHandler = (title, message) => {
-    const hint = document.querySelector(".hint-wrapper");
+  hintShowHandler = (title, message, isSuccess = false) => {
     this.setState(() => ({
       error: {
         title,
         message,
       },
     }));
-    hint.classList.add("active");
+    if (isSuccess) {
+      this.state.tooltip.classList.add("success");
+    }
+    this.state.tooltip.classList.add("active");
   };
 
   inputHandler = (e) => {
@@ -77,8 +96,7 @@ class AuthForm extends Component {
 
   hintClickHandler = (e) => {
     e.preventDefault();
-    const hint = document.querySelector(".hint-wrapper");
-    hint.classList.remove("active");
+    this.state.tooltip.classList.remove("active");
   };
 
   render() {
@@ -93,6 +111,7 @@ class AuthForm extends Component {
               id="email"
               placeholder="email"
               onInput={this.inputHandler}
+              defaultValue={this.state.email}
             />
           </div>
           <div className="password-wrapper">
@@ -102,6 +121,7 @@ class AuthForm extends Component {
               id="password"
               placeholder="password"
               onInput={this.inputHandler}
+              defaultValue={this.state.password}
             />
           </div>
           <div className="hint-wrapper">
